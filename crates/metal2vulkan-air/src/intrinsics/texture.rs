@@ -40,8 +40,9 @@
 //! whose declaration disagrees is malformed input.
 //!
 //! Immediates read into the variant: the access qualifier (sample 0, read 1, write 2,
-//! read_write 3), the sample LOD mode, the offset-present flag, and a gather's component. A
-//! value outside those enumerations leaves the call unknown. Positions whose meaning is not
+//! read_write 3; any other constant yields `access: None` so older/upgraded AIR stays decoded),
+//! the sample LOD mode, the offset-present flag, and a gather's component (a value outside
+//! `component::x`..`w` leaves the call unknown). Positions whose meaning is not
 //! established (the depth word, the imageblock slice flags) are ordinary typed operands that
 //! lowering must interpret or refuse.
 
@@ -947,10 +948,7 @@ impl Texture {
         let at = |role| layout.index(role);
         let flag = |role| at(role).map(|i| imm.flag(i)).transpose();
         let access = match at(TexRole::Access) {
-            Some(i) => match Access::from_raw(imm.get(i)?) {
-                Some(a) => Some(a),
-                None => return Ok(None),
-            },
+            Some(i) => Access::from_raw(imm.get(i)?),
             None => None,
         };
         let offset = flag(TexRole::OffsetFlag)?.unwrap_or(false);

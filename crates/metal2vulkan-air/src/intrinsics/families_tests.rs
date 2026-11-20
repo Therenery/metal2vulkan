@@ -1562,9 +1562,14 @@ fn texture_immediates_bind() {
             ..
         }
     ));
-    // An access outside the qualifiers stays unknown; a non-constant flag is malformed.
+    // An access outside 0..=3 still binds with `access: None` (nothing in lowering reads it,
+    // and upgraded/older AIR modules can carry other integer values there); a non-constant flag
+    // is still malformed.
     let args = [v(0), v(1), v(2), no, v(4), no, v(6), v(7), c.i32(4)];
-    assert_eq!(bind(sample, &args, &c.table), Ok(Bound::Unknown));
+    let Ok(Bound::Air(AirIntrinsic::Texture(t))) = bind(sample, &args, &c.table) else {
+        panic!("bind");
+    };
+    assert_eq!(t.access, None);
     let args = [v(0), v(1), v(2), v(3), v(4), no, v(6), v(7), zero];
     assert_eq!(
         bind(sample, &args, &c.table),
