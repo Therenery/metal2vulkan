@@ -646,3 +646,29 @@ fn runtime_sampler_fetches_keep_their_denormals() {
         );
     }
 }
+
+#[test]
+fn sample_with_unknown_access_immediate_lowers_and_validates() {
+    let p = profile("moltenvk-m3", crate::device::DevicePolicy::default()).expect("profile");
+    for access in ["4", "-1"] {
+        let two_d = runtime_kernel(Read::Sample).replace(
+            ", float 0.0, i32 0)",
+            &format!(", float 0.0, i32 {access})"),
+        );
+        let Some(bc) = assemble(&format!("sample_2d access={access}"), &two_d) else {
+            return;
+        };
+        let a = compile(&bc, "k", &p).unwrap_or_else(|e| panic!("2d access={access}: {e}"));
+        link_and_validate(&a, &p).unwrap_or_else(|e| panic!("2d access={access} L3: {e}"));
+
+        let arr = runtime_kernel(Read::Array).replace(
+            ", float 0.0, i32 0)",
+            &format!(", float 0.0, i32 {access})"),
+        );
+        let Some(bc) = assemble(&format!("sample_2d_array access={access}"), &arr) else {
+            return;
+        };
+        let a = compile(&bc, "k", &p).unwrap_or_else(|e| panic!("array access={access}: {e}"));
+        link_and_validate(&a, &p).unwrap_or_else(|e| panic!("array access={access} L3: {e}"));
+    }
+}
