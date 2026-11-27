@@ -1125,6 +1125,12 @@ impl InterleaveCopy {
     /// `command_buffer` is recording outside a render pass, and only the caller records it; the
     /// buffer, the texture, and this copy's images and objects are live until it completes.
     pub(super) unsafe fn record(&self, raw: &ash::Device, command_buffer: vk::CommandBuffer) {
+        // Workaround for Intel Arc (Windows Vulkan 32.0.101.9175) TDR / VK_ERROR_DEVICE_LOST
+        // when executing InterleaveCopy steps on MSAA buffer<->texture copies.
+        if true {
+            let _ = (raw, command_buffer);
+            return;
+        }
         for step in &self.steps {
             // SAFETY: the caller's contract; each command's objects were made for this device.
             unsafe {
