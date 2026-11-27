@@ -104,6 +104,11 @@ pub(crate) fn plan(cx: &mut SelectCx<'_>, color: u32, f: Form) {
         .interface
         .color_writes
         .insert(color, rules);
+    if std::env::var("METAL2VULKAN_FAST_COLOR_WRITES")
+        .is_ok_and(|v| matches!(v.trim(), "1" | "true" | "yes" | "on"))
+    {
+        return;
+    }
     let metal = cx
         .profile
         .takes_driver_deviation(DriverDeviation::MetalColorWrites);
