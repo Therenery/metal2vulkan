@@ -1,3 +1,27 @@
+# metal2vulkan (Intel Arc 140T / Core Ultra 9 285H Fork)
+
+> **Intel Arc / WSM Fork (`intel-arc-140t-workaround`)**
+>
+> Tested on Windows 11 with **Intel Core Ultra 9 285H** (Lenovo Xiaoxin Pro 16 GT) / **Intel(R) Arc(TM) 140T GPU (16GB)**, driver `32.0.101.9175`, running **macOS Tahoe 26.3 (`25D125`)** via [`HemantKArya/WSM`](https://github.com/HemantKArya/WSM) and [`aljus7/reims-vgpu`](https://github.com/aljus7/reims-vgpu).
+>
+> **适用于 Intel 核显 / 锐炫显卡（如 Ultra 9 285H / Arc 140T）在 Windows 上运行 WSM + macOS Tahoe 26.3：**
+> 上游 `tqmane/metal2vulkan` 已提交 PR [#8](https://github.com/tqmane/metal2vulkan/pull/8)（前两项通用修复）；本分支额外包含第 3 项针对 Intel Arc 140T TDR (`DeviceLost`) 的绕过逻辑，并在 Releases 中提供预编译 `reims_vgpu_c.dll`。
+
+### Changes vs Upstream (`ea5d6b87`)
+
+1. **`crates/metal2vulkan-runtime/src/image_plan.rs`** ([PR #8](https://github.com/tqmane/metal2vulkan/pull/8)):
+   - Allow `DEPTH_STENCIL_ATTACHMENT` usage when `Stencil8` falls back to `VK_FORMAT_D32_SFLOAT_S8_UINT` (`FormatEmulation::StencilInCombined | FormatEmulation::DepthInCombined`) on GPUs without native `VK_FORMAT_S8_UINT`.
+2. **`crates/metal2vulkan-runtime/src/depth_copy.rs`** ([PR #8](https://github.com/tqmane/metal2vulkan/pull/8)):
+   - Add `DriverId::INTEL_PROPRIETARY_WINDOWS` to `FRAGMENT_DEPTH_CHANGES` so depth/stencil copy uses the `FragDepth` draw fallback instead of failing with `MultisampledBufferCopy`.
+3. **`crates/metal2vulkan-runtime/src/sample_interleave.rs`** *(workaround on this branch only)*:
+   - Early-return in `InterleaveCopy::record` to avoid Windows TDR / `VK_ERROR_DEVICE_LOST` on Intel Arc 140T (`32.0.101.9175`).
+
+### Companion WSM Fix (macOS Tahoe 26.3 Black Screen)
+
+If `wsm gui start` flashes the wallpaper once and then shows a black screen with a working cursor, `/System/Library/CoreServices/Installer Progress.app` is stuck at window level `994`. See [`HemantKArya/WSM#2`](https://github.com/HemantKArya/WSM/issues/2) and add `pkill -9 -x "Installer Progress" 2>/dev/null || true` inside `start_session()` in `/usr/local/libexec/wsm-gui`.
+
+---
+
 # metal2vulkan
 
 [![License: GPL-2.0-or-later OR LGPL-3.0-or-later](https://img.shields.io/badge/License-GPL%202.0%20or%20later%20OR%20LGPL%203.0%20or%20later-blue.svg)](LICENSE)
